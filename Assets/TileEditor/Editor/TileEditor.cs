@@ -39,14 +39,9 @@ public class TileEditor : Editor
         string tileSelectionPath = "Assets/TileEditor/Prefabs/TileSelectionRect.prefab";
         selectionPrefab = (GameObject)AssetDatabase.LoadAssetAtPath(tileSelectionPath, typeof(GameObject));            
        
-        brush = new Brush();
+        brush = ScriptableObject.CreateInstance<Brush>();
         brush.LoadTileSet(preferences.lastBrush);  
         tileWidth = preferences.TileWidth;
-
-
-
-
-      
     }
 
     public void OnDisable()
@@ -176,7 +171,6 @@ public class TileEditor : Editor
             }
             brush.UpdateNeighborTiles(mousePos, tileWidth, layer, Vector3.zero);
         }
-       
     }
 
     private void CreateTile(Vector3 mousePos, GameObject parent)
