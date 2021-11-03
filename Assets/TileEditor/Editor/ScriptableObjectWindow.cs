@@ -37,7 +37,7 @@ public class ScriptableObjectWindow : EditorWindow
 	
 	public void OnGUI()
 	{
-		GUILayout.Label("ScriptableObject Class");
+		GUILayout.Label("ScriptableObject");
 		selectedIndex = EditorGUILayout.Popup(selectedIndex, names);
 
 		if (GUILayout.Button("Create"))

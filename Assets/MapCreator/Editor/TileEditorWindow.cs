@@ -12,18 +12,26 @@ public class TileEditorWindow : EditorWindow
     private bool showLevelOptions = false;
     private bool bNewTileMap = false;
     private bool bPaintMode = false;
-    private int sizeLevelFloor = 1;
-    private int sizeLevelWidth = 1;
-    private int sizeLevelDepth = 1;
-    private int sizeGridHeight = 1;
-    private int sizeGridSize = 1;
+    private bool bEndWork = false;
+    private bool canPaint = false;
+    
+    private int lcFloor = 1;
+    private int lcFloorRange = 1;
+    private float lcFloorHeight = 1f;
+    private float lcGridSizeX = 1f;
+    private float lcGridSizeY = 1f;
+
     private Transform TileSpawner;
 
-    [SerializeField] private List<GameObject> palette = new List<GameObject>();
+    [SerializeField] 
+    private List<GameObject> palette = new List<GameObject>();
+    
     string path = "Assets/MapCreator/Prefabs";
 
-    [SerializeField] private int paletteIndex;
+    [SerializeField] 
+    private int paletteIndex;
 
+    [SerializeField]
     private Vector2 cellSize = new Vector2(1f, 1f);
     
     private Rect rectLevelValue;
@@ -34,6 +42,8 @@ public class TileEditorWindow : EditorWindow
     private GUIStyle customGUIStyle_label;
     private GUIStyle customGUIStyle_foldout;
     private GUIStyle customGUIStyle_helpbox;
+    private GUIStyle customGUIStyle_Button;
+    private GUIStyle customGUIStyle_ToggleButton;
     
     [MenuItem("TileEditor/ShowEditor")]
     static void Init()
@@ -48,7 +58,8 @@ public class TileEditorWindow : EditorWindow
         customGUIStyle_label = new GUIStyle(EditorStyles.label)
         {
             fontSize = 15,
-            fontStyle = FontStyle.Bold
+            fontStyle = FontStyle.Bold,
+            margin = new RectOffset(0,0,0,10)
         };
 
         customGUIStyle_foldout = new GUIStyle(EditorStyles.foldout)
@@ -62,74 +73,74 @@ public class TileEditorWindow : EditorWindow
         {
             margin = new RectOffset(20, 20, 15, 0),
             padding = new RectOffset(15,15,5,5)
-            
+        };
+
+        customGUIStyle_Button = new GUIStyle(EditorStyles.miniButton)
+        {
+            margin = new RectOffset(20,20,0,0),
+            fontStyle = FontStyle.Bold,
+            fixedHeight = 40f
         };
     }
     
     public void OnGUI()
     {
         InitGUIStyle();
-
-        showLevelOptions = EditorGUILayout.Foldout(showLevelOptions, "Level Creator",customGUIStyle_foldout);
+        showLevelOptions = EditorGUILayout.Foldout(showLevelOptions, "TileEditor - Xerlock",customGUIStyle_foldout);
         if (showLevelOptions)
         {
-            EditorGUILayout.Space();
             EditorGUI.indentLevel++;
             
+            #region 1
+            EditorGUI.BeginDisabledGroup(canPaint); // DisableGroup (1) 시작
             EditorGUILayout.BeginHorizontal(); // Level Value
             {
                 EditorGUILayout.BeginVertical(customGUIStyle_helpbox);
-                EditorGUILayout.LabelField("Level Value", customGUIStyle_label);
-                sizeLevelFloor = EditorGUILayout.IntField("층 수",sizeLevelFloor);
-                sizeLevelWidth = EditorGUILayout.IntField("가로", sizeLevelWidth);
-                sizeLevelDepth = EditorGUILayout.IntField("세로", sizeLevelDepth);
+                EditorGUILayout.LabelField("제작 설정", customGUIStyle_label);
+                EditorGUILayout.Space();
+                lcFloor = EditorGUILayout.IntField("층 수",lcFloor);
+                EditorGUILayout.Space();
+                lcFloorHeight = EditorGUILayout.FloatField("층 높이", lcFloorHeight);
+                EditorGUILayout.Space();
+                lcGridSizeX = EditorGUILayout.FloatField("Grid Size X", lcGridSizeX);
+                EditorGUILayout.Space();
+                lcGridSizeY =  EditorGUILayout.FloatField("Grid Size Y", lcGridSizeY);
+                EditorGUILayout.Space();
                 EditorGUILayout.EndVertical();
             }
             EditorGUILayout.EndHorizontal();
-
+            #endregion
+            
             EditorGUILayout.Space();
 
-            EditorGUILayout.BeginHorizontal(); // Grid Value
-            {
-                EditorGUILayout.BeginVertical(customGUIStyle_helpbox);
-                EditorGUILayout.LabelField("Grid Value", customGUIStyle_label);
-                sizeGridHeight = EditorGUILayout.IntField("층 높이", sizeGridHeight);
-                sizeGridSize = EditorGUILayout.IntField("그리드 크기", sizeGridSize);
-                EditorGUILayout.EndVertical();
-            }
-            EditorGUILayout.EndHorizontal();
+            #region 2
             
+            EditorGUILayout.BeginHorizontal();
+            bNewTileMap = GUILayout.Button("새로운 맵 만들기", customGUIStyle_Button);
+            GUILayout.Button("기존 맵 이어하기", customGUIStyle_Button);
+            EditorGUILayout.EndHorizontal();
+            EditorGUI.EndDisabledGroup(); // DisableGroup (1) 끝
+            #endregion
+            
+            EditorGUILayout.Space();
+            
+            #region 3
+            EditorGUI.BeginDisabledGroup(!canPaint); // DisableGroup (2) 시작
+            bPaintMode = GUILayout.Toggle(bPaintMode, "그리기 모드", customGUIStyle_Button);
+
             EditorGUILayout.Space();
 
             EditorGUILayout.BeginHorizontal();
-            bNewTileMap = GUILayout.Button("New Map Spawner");
-            GUILayout.Button("Find Map Spawner");
+            EditorGUILayout.LabelField("현재 레벨",GUILayout.Width(100f));
+            EditorGUILayout.IntSlider(lcFloorRange, 1, lcFloor);
             EditorGUILayout.EndHorizontal();
             
-            EditorGUILayout.Space();
-
-            bPaintMode = GUILayout.Toggle(bPaintMode, "Start Creating", "Button", GUILayout.Height(60f));
-
-            EditorGUILayout.Space();
-
-            EditorGUILayout.BeginVertical();
+            EditorGUI.EndDisabledGroup(); // DisableGroup (2) 끝
+            #endregion
             
-            EditorGUILayout.LabelField("현재 레벨:");
-
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.Button("<");
-            GUILayout.Button(">");
-            EditorGUILayout.EndHorizontal();
-            
-            EditorGUILayout.EndVertical();
-
-            EditorGUILayout.LabelField("선택된 타일");
-
-            if (bNewTileMap)
-            {
-                Debug.Log("bNewTileMap Click!");
-                TileSpawner= new GameObject("TileSpawner").transform;
-            }
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("선택된 타일",customGUIStyle_label);
 
             List<GUIContent> paletteIcons = new List<GUIContent>();
 
@@ -139,7 +150,29 @@ public class TileEditorWindow : EditorWindow
                 paletteIcons.Add(new GUIContent(texture));
             }
 
-            paletteIndex = GUILayout.SelectionGrid(paletteIndex, paletteIcons.ToArray(), 6);
+            EditorGUILayout.BeginVertical(customGUIStyle_helpbox);
+            paletteIndex = GUILayout.SelectionGrid(paletteIndex, paletteIcons.ToArray(), 6,GUILayout.Height(60f));
+            EditorGUILayout.EndVertical();
+            
+            EditorGUI.BeginDisabledGroup(!canPaint);
+            bEndWork = GUILayout.Button("작업 끝내기", customGUIStyle_Button);
+            EditorGUI.EndDisabledGroup();
+            if (bNewTileMap)
+            {
+                TileSpawner = new GameObject("TileSpawner").transform;
+                canPaint = true;
+            }
+
+            if (bEndWork)
+            {
+                if (!HasChild(TileSpawner))
+                {
+                    DestroyImmediate(TileSpawner.gameObject);
+                }
+                
+                bPaintMode = false;
+                canPaint = false;
+            }
         }
     }
 
@@ -163,13 +196,12 @@ public class TileEditorWindow : EditorWindow
             HandleUtility.AddDefaultControl(0);
         }
 
-        Vector3 newPos = new Vector3(cellCenter.x, 0, cellCenter.y);
-        
-        if (paletteIndex < palette.Count && Event.current.type == EventType.MouseDown && Event.current.button == 0)
+        if (paletteIndex < palette.Count && 
+            Event.current.type == EventType.MouseDown && 
+            Event.current.button == 0)
         {
-            GameObject prefab = palette[paletteIndex];
-            GameObject go = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
-            go.transform.position = newPos;
+            GameObject go = PrefabUtility.InstantiatePrefab(palette[paletteIndex]) as GameObject;
+            go.transform.position = new Vector3(cellCenter.x, 0, cellCenter.y);
             go.transform.parent = TileSpawner;
         }
     }
@@ -231,8 +263,13 @@ public class TileEditorWindow : EditorWindow
 
         Vector2Int cell = new Vector2Int(Mathf.RoundToInt(mousePosition.x / cellSize.x),
             Mathf.RoundToInt(mousePosition.z / cellSize.y));
-
+        
         return cell * cellSize;
+    }
+
+    private bool HasChild(Transform transform)
+    {
+        return (transform.childCount > 0) ? true : false;
     }
     
     private void SwapToZero(out float dst, ref float src)
