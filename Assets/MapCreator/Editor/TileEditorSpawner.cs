@@ -10,8 +10,8 @@ public class TileEditorSpawner : Editor
     private TileSpawner Spawner => (TileSpawner) target;
     public GameObject selectObject = null;
     private bool lockMouse = false;
-
-    public enum ToolModes
+    
+    private enum ToolModes
     {
         Move,
         Building,
@@ -48,7 +48,6 @@ public class TileEditorSpawner : Editor
         if (e.type == EventType.KeyDown && e.keyCode == KeyCode.V)
         {
             lockMouse = !lockMouse;
-            Debug.Log("Lock State: " + lockMouse);
         }
         
         if (e.type == EventType.MouseDown && e.button == 0 && toolMode == ToolModes.Building && !lockMouse)
@@ -60,6 +59,7 @@ public class TileEditorSpawner : Editor
             }
 
             selectObject = Selection.activeGameObject;
+            //activeTransform1.transform.localPosition = selectObject.transform.localPosition;
         }
 
         Selection.activeGameObject = Spawner.transform.gameObject;
@@ -67,40 +67,52 @@ public class TileEditorSpawner : Editor
 
     private void BuildingPanel(int id)
     {
-        const int left = 10;
-        const int width = 200;
-        const int height = 400;
+        if (selectObject == null)
+        {
+            return;
+        }
+
+        const int windowWidth = 200;
+        const int squareSize = 75;
         var e = Event.current;
         
-        Vector3 activeLocalPosition = selectObject.transform.localPosition;
-        Quaternion activeLocalRotation = selectObject.transform.localRotation;
-        Vector3 activeLocalScale =  selectObject.transform.localScale;
-        Texture2D activeThumbnail = AssetPreview.GetAssetPreview(selectObject);
-        
-        GUI.DrawTexture(new Rect(width/2 - 75/2, 25, 75,75), activeThumbnail);
-        
         EditorGUILayout.BeginVertical(new GUIStyle(
-            EditorStyles.helpBox
-            ) {margin = new RectOffset(0,0,110,0)} );
-        activeLocalPosition = EditorGUILayout.Vector3Field("Local Position", activeLocalPosition);
-        Vector3 transRotation = EditorGUILayout.Vector3Field("Local Rotation", activeLocalRotation.eulerAngles);
-        activeLocalScale = EditorGUILayout.Vector3Field("Local Scale", activeLocalScale);
+                EditorStyles.helpBox
+                )
+        {
+            margin = new RectOffset(0,0,110,0)
+        } );
+
+        Texture2D activeThumbnail = AssetPreview.GetAssetPreview(selectObject);
+        GUI.DrawTexture(new Rect(windowWidth / 2 - squareSize/2, 25, squareSize,squareSize), activeThumbnail);
+
+        Helpers.TransformData activeTransformData = new Helpers.TransformData(selectObject.transform);
+        
+        EditorGUI.BeginChangeCheck();
+        activeTransformData.localPosition = EditorGUILayout.Vector3Field("Local Position", activeTransformData.localPosition);
+        activeTransformData.localRotation = EditorGUILayout.Vector3Field("Local Rotation", activeTransformData.localRotation);
+        activeTransformData.localScale = EditorGUILayout.Vector3Field("Local Scale", activeTransformData.localScale);
+        
+        if (EditorGUI.EndChangeCheck())
+        {
+            activeTransformData.ApplyTransform(selectObject.transform);
+        }
 
         EditorGUILayout.Space();
-        
-        if (GUILayout.Button("변경하기"))
+ 
+        EditorGUI.LabelField(new Rect(110, 355, 150, 45), $"Lock: {lockMouse}", new GUIStyle(
+            EditorStyles.label)
         {
-            selectObject.transform.localPosition = activeLocalPosition;
-        }
+            fontSize = 14,
+            fontStyle = FontStyle.Bold
+        });
         
         EditorGUILayout.EndVertical();
-
         if (e.type == EventType.MouseMove || e.type == EventType.MouseDown)
             Repaint();
     }
-    
-    
-    public static GameObject Select<T>(Event e) where T : UnityEngine.Component
+
+    private static GameObject Select<T>(Event e) where T : UnityEngine.Component
     {
         Camera cam = Camera.current;
 

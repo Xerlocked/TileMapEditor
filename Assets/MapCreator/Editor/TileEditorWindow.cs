@@ -41,7 +41,7 @@ public class TileEditorWindow : EditorWindow
     private GUIStyle customGUIStyle_Button;
     private GUIStyle customGUIStyle_ToggleButton;
     
-    [MenuItem("TileEditor/ShowEditor")]
+    [MenuItem("TileEditor/Open TileEditor")]
     static void Init()
     {
         var window = (TileEditorWindow) GetWindow(typeof(TileEditorWindow));
@@ -116,7 +116,9 @@ public class TileEditorWindow : EditorWindow
             
             if (GUILayout.Button("새로운 맵 만들기", customGUIStyle_Button))
             {
-                TileSpawner = new GameObject("TileSpawner").transform;
+                GameObject temporaryObject = new GameObject("TileSpawner");
+                temporaryObject.AddComponent(typeof(TileSpawner));
+                TileSpawner = temporaryObject.transform;
                 canPaint = true;
             }
             
@@ -172,13 +174,21 @@ public class TileEditorWindow : EditorWindow
 
             if (bEndWork)
             {
-                if (!HasChild(TileSpawner))
+                try
                 {
-                    DestroyImmediate(TileSpawner.gameObject);
+                    if (!HasChild(TileSpawner))
+                    {
+                        DestroyImmediate(TileSpawner.gameObject);
+                    }
+                    
+                    bPaintMode = false;
+                    canPaint = false;
                 }
-                
-                bPaintMode = false;
-                canPaint = false;
+                catch (MissingReferenceException)
+                {
+                    bPaintMode = false;
+                    canPaint = false;
+                }
             }
         }
     }
